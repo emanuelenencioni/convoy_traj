@@ -90,7 +90,21 @@ private:
     pose_to_publish.pose.pose.position.x = filtered_transform_.transform.translation.x;
     pose_to_publish.pose.pose.position.y = filtered_transform_.transform.translation.y;
     pose_to_publish.pose.pose.position.z = filtered_transform_.transform.translation.z;
-    pose_to_publish.pose.pose.orientation = filtered_transform_.transform.rotation;
+    
+    // Create a quaternion for 180-degree rotation around Z-axis (yaw)
+    tf2::Quaternion q_rotation;
+    q_rotation.setRPY(0, 0, M_PI); // Roll, Pitch, Yaw (in radians)
+
+    // Get the current filtered orientation
+    tf2::Quaternion q_filtered;
+    tf2::fromMsg(filtered_transform_.transform.rotation, q_filtered);
+
+    // Apply the 180-degree rotation
+    tf2::Quaternion q_new = q_filtered * q_rotation;
+    q_new.normalize();
+
+    // Set the new orientation
+    pose_to_publish.pose.pose.orientation = tf2::toMsg(q_new);
 
     // Add covariance to the pose. These are example values and should be tuned.
     pose_to_publish.pose.covariance[0] = 0.1; // x
