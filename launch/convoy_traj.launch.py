@@ -1,46 +1,85 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from ament_index_python.packages import get_package_share_directory
-import os
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
-    pkg_convoy_traj = get_package_share_directory('convoy_traj')
-
-    # Start the convoy_traj_node
+    # Declare launch arguments
+    camera_frame_arg = DeclareLaunchArgument(
+        'camera_frame',
+        default_value='zed_left_camera_optical_frame',
+        description='Camera optical frame name'
+    )
+    
+    tag0_frame_arg = DeclareLaunchArgument(
+        'tag0_frame',
+        default_value='tag36h11:0',
+        description='First AprilTag frame name'
+    )
+    
+    tag1_frame_arg = DeclareLaunchArgument(
+        'tag1_frame',
+        default_value='tag36h11:1',
+        description='Second AprilTag frame name'
+    )
+    
+    output_frame_arg = DeclareLaunchArgument(
+        'output_frame',
+        default_value='front_vehicle',
+        description='Output frame for the averaged pose'
+    )
+    
+    timer_period_arg = DeclareLaunchArgument(
+        'timer_period_ms',
+        default_value='100',
+        description='Timer period in milliseconds'
+    )
+    
+    alpha_arg = DeclareLaunchArgument(
+        'alpha',
+        default_value='0.8',
+        description='Smoothing factor for exponential moving average (0.0 < alpha <= 1.0)'
+    )
+    
+    # Covariance parameters
+    position_covariance_arg = DeclareLaunchArgument(
+        'position_covariance',
+        default_value='0.1',
+        description='Covariance for x, y, z position'
+    )
+    
+    orientation_covariance_arg = DeclareLaunchArgument(
+        'orientation_covariance',
+        default_value='0.05',
+        description='Covariance for roll, pitch, yaw orientation'
+    )
+    
+    # Create the convoy_traj_node
     convoy_traj_node = Node(
         package='convoy_traj',
         executable='convoy_traj_node',
         name='convoy_traj_node',
-        output='screen'
-    )
-
-    # Start the navsat_transform_node
-    navsat_transform_node = Node(
-        package='robot_localization',
-        executable='navsat_transform_node',
-        name='navsat_transform_node',
         output='screen',
-        parameters=[{'use_odometry_yaw': False,
-                     'magnetic_declination_radians': 0.0, # Adjust to your location
-                     'yaw_offset': 1.5707963, # Adjust as needed
-                     'zero_altitude': True,
-                     'publish_filtered_gps': True,
-                     'frequency': 30.0
-                     }],
-        remappings=[('/gps/fix', '/gnss/fix')]
-    )
-
-    # Start the UKF node
-    ukf_node = Node(
-        package='robot_localization',
-        executable='ukf_node',
-        name='ukf_node',
-        output='screen',
-        parameters=[os.path.join(pkg_convoy_traj, 'config', 'ukf.yaml')]
+        parameters=[{
+            'camera_frame': LaunchConfiguration('camera_frame'),
+            'tag0_frame': LaunchConfiguration('tag0_frame'),
+            'tag1_frame': LaunchConfiguration('tag1_frame'),
+            'output_frame': LaunchConfiguration('output_frame'),
+            'timer_period_ms': LaunchConfiguration('timer_period_ms'),
+            'alpha': LaunchConfiguration('alpha'),
+            'position_covariance': LaunchConfiguration('position_covariance'),
+            'orientation_covariance': LaunchConfiguration('orientation_covariance'),
+        }]
     )
 
     return LaunchDescription([
-        convoy_traj_node,
-        navsat_transform_node,
-        ukf_node
+        camera_frame_arg,
+        tag0_frame_arg,
+        tag1_frame_arg,
+        output_frame_arg,
+        timer_period_arg,
+        alpha_arg,
+        position_covariance_arg,
+        orientation_covariance_arg,
+        convoy_traj_node
     ])
