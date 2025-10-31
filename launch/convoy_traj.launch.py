@@ -54,6 +54,25 @@ def generate_launch_description():
         description='Covariance for roll, pitch, yaw orientation'
     )
     
+    # Front axes offset parameters
+    axes_offset_x_arg = DeclareLaunchArgument(
+        'axes_offset_x',
+        default_value='0.0',
+        description='X offset from front_vehicle to front_axes (meters)'
+    )
+    
+    axes_offset_y_arg = DeclareLaunchArgument(
+        'axes_offset_y',
+        default_value='0.0',
+        description='Y offset from front_vehicle to front_axes (meters)'
+    )
+    
+    axes_offset_z_arg = DeclareLaunchArgument(
+        'axes_offset_z',
+        default_value='0.0',
+        description='Z offset from front_vehicle to front_axes (meters)'
+    )
+    
     # Create the convoy_traj_node
     convoy_traj_node = Node(
         package='convoy_traj',
@@ -69,6 +88,9 @@ def generate_launch_description():
             'alpha': LaunchConfiguration('alpha'),
             'position_covariance': LaunchConfiguration('position_covariance'),
             'orientation_covariance': LaunchConfiguration('orientation_covariance'),
+            'axes_offset_x': LaunchConfiguration('axes_offset_x'),
+            'axes_offset_y': LaunchConfiguration('axes_offset_y'),
+            'axes_offset_z': LaunchConfiguration('axes_offset_z'),
         }]
     )
 
@@ -81,5 +103,8 @@ def generate_launch_description():
         alpha_arg,
         position_covariance_arg,
         orientation_covariance_arg,
+        axes_offset_x_arg,
+        axes_offset_y_arg,
+        axes_offset_z_arg,
         convoy_traj_node
     ])
