@@ -1,20 +1,12 @@
 convoy_traj_node:
   ros__parameters:
     # Camera and tag frames
-    camera_frame: "zed_left_camera_optical_frame"
-    tag0_frame: "tag36h11:0"
-    tag1_frame: "tag36h11:1"
-    output_frame: "front_vehicle"
-    
-    # Timer settings
-    timer_period_ms: 100
+    camera_frame_id: "zed_left_camera_optical_frame"
+    tag0_frame_id: "tag36h11:0"
+    tag1_frame_id: "tag36h11:1"
     
     # Filtering parameters
     alpha: 0.8  # Smoothing factor (0.0 < alpha <= 1.0). Higher = less smoothing, more responsive
-    
-    # Covariance parameters
-    position_covariance: 0.1    # Covariance for x, y, z position
-    orientation_covariance: 0.05  # Covariance for roll, pitch, yaw orientation
     
     # Front axes offset (translation from front_vehicle to front_axes)
     # Adjust these values based on your vehicle geometry
