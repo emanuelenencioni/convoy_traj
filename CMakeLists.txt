@@ -8,6 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(robot_localization REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -19,14 +20,17 @@ find_package(tf2_geometry_msgs REQUIRED)
 # find_package(launch REQUIRED)
 # find_package(launch_ros REQUIRED)
 
-add_executable(convoy_traj_node src/convoy_traj_node.cpp)
-target_include_directories(convoy_traj_node PUBLIC
+# Build as a shared library (composable component)
+add_library(convoy_traj_component SHARED
+  src/convoy_traj_node.cpp)
+target_include_directories(convoy_traj_component PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_compile_features(convoy_traj_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(convoy_traj_component PUBLIC c_std_99 cxx_std_17)
 ament_target_dependencies(
-  convoy_traj_node
+  convoy_traj_component
   "rclcpp"
+  "rclcpp_components"
   "robot_localization"
   "message_filters"
   "apriltag_msgs"
@@ -37,8 +41,17 @@ ament_target_dependencies(
   "tf2_ros"
 )
 
-install(TARGETS convoy_traj_node
-  DESTINATION lib/${PROJECT_NAME})
+# Register the component
+rclcpp_components_register_node(convoy_traj_component
+  PLUGIN "convoy_traj::ConvoyTrajNode"
+  EXECUTABLE convoy_traj_node
+)
+
+# Install the library
+install(TARGETS convoy_traj_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
 
 install(
   DIRECTORY launch

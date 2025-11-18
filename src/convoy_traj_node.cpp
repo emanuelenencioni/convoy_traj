@@ -1,4 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/buffer.h"
@@ -9,26 +10,40 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Vector3.h>
 
+namespace convoy_traj
+{
+
 class ConvoyTrajNode : public rclcpp::Node
 {
 public:
-  ConvoyTrajNode()
-  : Node("convoy_traj_node")
+  explicit ConvoyTrajNode(const rclcpp::NodeOptions & options)
+  : Node("convoy_traj_node", options)
   {
     RCLCPP_INFO(this->get_logger(), "Convoy Trajectory Node has been started.");
 
     // Declare parameters
+    this->declare_parameter<std::string>("tag0_frame_id", "tag36h11:0");
+    this->declare_parameter<std::string>("tag1_frame_id", "tag36h11:1");
+    this->declare_parameter<std::string>("camera_frame_id", "zed_left_camera_optical_frame");
     this->declare_parameter<double>("axes_offset_x", 0.0);
     this->declare_parameter<double>("axes_offset_y", 0.0);
     this->declare_parameter<double>("axes_offset_z", 0.0);
+    this->declare_parameter<double>("alpha", 0.1);
 
     // Get parameters
+    tag0_frame_id_ = this->get_parameter("tag0_frame_id").as_string();
+    tag1_frame_id_ = this->get_parameter("tag1_frame_id").as_string();
+    camera_frame_id_ = this->get_parameter("camera_frame_id").as_string();
     axes_offset_x_ = this->get_parameter("axes_offset_x").as_double();
     axes_offset_y_ = this->get_parameter("axes_offset_y").as_double();
     axes_offset_z_ = this->get_parameter("axes_offset_z").as_double();
+    alpha_ = this->get_parameter("alpha").as_double();
 
+    RCLCPP_INFO(this->get_logger(), "Tag frames: %s, %s", tag0_frame_id_.c_str(), tag1_frame_id_.c_str());
+    RCLCPP_INFO(this->get_logger(), "Camera frame: %s", camera_frame_id_.c_str());
     RCLCPP_INFO(this->get_logger(), "Front axes offset: x=%.3f, y=%.3f, z=%.3f", 
                 axes_offset_x_, axes_offset_y_, axes_offset_z_);
+    RCLCPP_INFO(this->get_logger(), "Filter alpha: %.3f", alpha_);
 
     tag_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/tag_pose", 10);
     axes_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/front_axes_pose", 10);
@@ -73,11 +88,8 @@ private:
   {
     geometry_msgs::msg::TransformStamped transform_stamped_0, transform_stamped_1;
     try {
-      // Assuming the base frame is 'camera' and the tag is 'tag_0'
-      // You might need to change these frame names
-      // Added a timeout to wait for the transform to be available
-      transform_stamped_0 = tf_buffer_->lookupTransform("zed_left_camera_optical_frame", "tag36h11:0", tf2::TimePoint(), std::chrono::milliseconds(50));
-      transform_stamped_1 = tf_buffer_->lookupTransform("zed_left_camera_optical_frame", "tag36h11:1", tf2::TimePoint(), std::chrono::milliseconds(50));
+      transform_stamped_0 = tf_buffer_->lookupTransform(camera_frame_id_, tag0_frame_id_, tf2::TimePoint(), std::chrono::milliseconds(50));
+      transform_stamped_1 = tf_buffer_->lookupTransform(camera_frame_id_, tag1_frame_id_, tf2::TimePoint(), std::chrono::milliseconds(50));
     } catch (const tf2::TransformException & ex) {
       RCLCPP_WARN(this->get_logger(), "Could not get transform: %s", ex.what());
       return;
@@ -129,7 +141,7 @@ private:
 
     geometry_msgs::msg::PoseWithCovarianceStamped pose_to_publish;
     pose_to_publish.header.stamp = this->get_clock()->now();
-    pose_to_publish.header.frame_id = "zed_left_camera_optical_frame";
+    pose_to_publish.header.frame_id = camera_frame_id_;
     pose_to_publish.pose.pose.position.x = filtered_transform_.transform.translation.x;
     pose_to_publish.pose.pose.position.y = filtered_transform_.transform.translation.y;
     pose_to_publish.pose.pose.position.z = filtered_transform_.transform.translation.z;
@@ -162,7 +174,7 @@ private:
     // Publish dynamic transform from camera to front_vehicle
     geometry_msgs::msg::TransformStamped front_vehicle_transform;
     front_vehicle_transform.header.stamp = this->get_clock()->now();
-    front_vehicle_transform.header.frame_id = "zed_left_camera_optical_frame";
+    front_vehicle_transform.header.frame_id = camera_frame_id_;
     front_vehicle_transform.child_frame_id = "front_vehicle";
     
     front_vehicle_transform.transform.translation.x = filtered_transform_.transform.translation.x;
@@ -175,12 +187,12 @@ private:
     // Publish front_axes pose by looking up the transform
     try {
       geometry_msgs::msg::TransformStamped axes_transform = 
-        tf_buffer_->lookupTransform("zed_left_camera_optical_frame", "front_axes", 
+        tf_buffer_->lookupTransform(camera_frame_id_, "front_axes", 
                                      tf2::TimePoint(), std::chrono::milliseconds(50));
       
       geometry_msgs::msg::PoseWithCovarianceStamped axes_pose;
       axes_pose.header.stamp = this->get_clock()->now();
-      axes_pose.header.frame_id = "zed_left_camera_optical_frame";
+      axes_pose.header.frame_id = camera_frame_id_;
       
       // Get position and orientation from the transform
       axes_pose.pose.pose.position.x = axes_transform.transform.translation.x;
@@ -210,17 +222,16 @@ private:
   bool first_transform_{true};
   double alpha_{0.1}; // Smoothing factor (0.0 < alpha <= 1.0). Smaller values mean more smoothing.
   
-  // Front axes offset parameters
+  // Parameters
+  std::string tag0_frame_id_;
+  std::string tag1_frame_id_;
+  std::string camera_frame_id_;
   double axes_offset_x_{0.0};
   double axes_offset_y_{0.0};
   double axes_offset_z_{0.0};
 };
 
-int main(int argc, char ** argv)
-{
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<ConvoyTrajNode>();
-  rclcpp::spin(node);
-  rclcpp::shutdown();
-  return 0;
-}
+}  // namespace convoy_traj
+
+// Register the component with class_loader
+RCLCPP_COMPONENTS_REGISTER_NODE(convoy_traj::ConvoyTrajNode)
