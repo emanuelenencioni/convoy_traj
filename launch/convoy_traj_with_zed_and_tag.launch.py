@@ -68,7 +68,7 @@ def generate_launch_description():
                 package='apriltag_ros',
                 plugin='AprilTagNode',
                 name='apriltag_node',
-                parameters=[apriltag_config, {'size': 0.12}],
+                parameters=[apriltag_config],
                 remappings=[
                     ('image', '/zed/zed_node/left/color/raw/image'),
                     ('camera_info', '/zed/zed_node/left/color/raw/image/camera_info'),
