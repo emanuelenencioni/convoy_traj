@@ -40,24 +40,6 @@ def generate_launch_description():
         }.items()
     )
     
-    # Declare launch arguments for convoy_traj
-    axes_offset_x_arg = DeclareLaunchArgument(
-        'axes_offset_x',
-        default_value='0.0',
-        description='X offset from front_vehicle to front_axes'
-    )
-    
-    axes_offset_y_arg = DeclareLaunchArgument(
-        'axes_offset_y',
-        default_value='0.0',
-        description='Y offset from front_vehicle to front_axes'
-    )
-    
-    axes_offset_z_arg = DeclareLaunchArgument(
-        'axes_offset_z',
-        default_value='0.0',
-        description='Z offset from front_vehicle to front_axes'
-    )
     
     # Load both AprilTag and Convoy nodes into ZED's container
     load_composable_nodes = LoadComposableNodes(
@@ -83,11 +65,6 @@ def generate_launch_description():
                 name='convoy_traj_node',
                 parameters=[
                     convoy_traj_config,
-                    {
-                        'axes_offset_x': LaunchConfiguration('axes_offset_x'),
-                        'axes_offset_y': LaunchConfiguration('axes_offset_y'),
-                        'axes_offset_z': LaunchConfiguration('axes_offset_z'),
-                    }
                 ],
                 extra_arguments=[{'use_intra_process_comms': True}],
             ),
@@ -101,9 +78,6 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        axes_offset_x_arg,
-        axes_offset_y_arg,
-        axes_offset_z_arg,
         zed_wrapper_launch,
         delayed_load,
     ])
