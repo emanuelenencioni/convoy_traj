@@ -146,15 +146,16 @@ private:
     pose_to_publish.pose.pose.position.y = filtered_transform_.transform.translation.y;
     pose_to_publish.pose.pose.position.z = filtered_transform_.transform.translation.z;
     
-    // Create a quaternion for 180-degree rotation around Z-axis (yaw)
+    // Create a quaternion for combined rotation:
+    // 180° around X-axis to flip Z up, then 180° around Z-axis for forward direction
     tf2::Quaternion q_rotation;
-    q_rotation.setRPY(0, 0, M_PI); // Roll, Pitch, Yaw (in radians)
+    q_rotation.setRPY(M_PI, 0, M_PI); // Roll=180°, Pitch=0°, Yaw=180°
 
     // Get the current filtered orientation
     tf2::Quaternion q_filtered;
     tf2::fromMsg(filtered_transform_.transform.rotation, q_filtered);
 
-    // Apply the 180-degree rotation
+    // Apply the rotation
     tf2::Quaternion q_new = q_filtered * q_rotation;
     q_new.normalize();
 
