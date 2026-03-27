@@ -2,8 +2,8 @@ convoy_traj_node:
   ros__parameters:
     # Camera and tag frames
     camera_frame_id: "zed_left_camera_optical_frame"
-    tag0_frame_id: "tag36h11:14"
-    tag1_frame_id: "tag36h11:15"
+    tag0_frame_id: "tag36h11:2"
+    tag1_frame_id: "tag36h11:3"
     
     # Filtering parameters
     alpha: 0.8  # Smoothing factor (0.0 < alpha <= 1.0). Higher = less smoothing, more responsive
