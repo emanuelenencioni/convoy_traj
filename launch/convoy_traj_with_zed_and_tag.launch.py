@@ -54,7 +54,7 @@ def generate_launch_description():
             # AprilTag Node
             ComposableNode(
                 package='apriltag_ros',
-                plugin='AprilTagNode',
+                plugin='apriltag_ros::AprilTagNode',
                 name='apriltag_node',
                 parameters=[apriltag_config],
                 remappings=[
