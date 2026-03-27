@@ -33,6 +33,12 @@ public:
     this->declare_parameter<double>("axes_offset_z", 0.0);
     this->declare_parameter<double>("alpha", 0.1);
 
+    // Maximum age of a TF transform before the tag is considered not visible.
+    // Must be larger than the AprilTag detector's pipeline latency (~100–500 ms
+    // typical) but small enough to catch a tag that has actually disappeared.
+    // Default: 1000 ms — increase if your detector runs slower.
+    this->declare_parameter<int>("tf_max_age_ms", 5000);
+
     tag0_frame_id_   = this->get_parameter("tag0_frame_id").as_string();
     tag1_frame_id_   = this->get_parameter("tag1_frame_id").as_string();
     camera_frame_id_ = this->get_parameter("camera_frame_id").as_string();
@@ -40,6 +46,7 @@ public:
     axes_offset_y_   = this->get_parameter("axes_offset_y").as_double();
     axes_offset_z_   = this->get_parameter("axes_offset_z").as_double();
     alpha_           = this->get_parameter("alpha").as_double();
+    tf_max_age_s_    = this->get_parameter("tf_max_age_ms").as_int() / 1000.0;
 
     RCLCPP_INFO(this->get_logger(), "Tag frames: %s, %s",
                 tag0_frame_id_.c_str(), tag1_frame_id_.c_str());
@@ -47,6 +54,7 @@ public:
     RCLCPP_INFO(this->get_logger(), "Front axes offset: x=%.3f, y=%.3f, z=%.3f",
                 axes_offset_x_, axes_offset_y_, axes_offset_z_);
     RCLCPP_INFO(this->get_logger(), "Filter alpha: %.3f", alpha_);
+    RCLCPP_INFO(this->get_logger(), "TF max age: %.3f s", tf_max_age_s_);
 
     // --- Inter-tag calibration parameters ---
     // Loaded from tag_calibration.yaml (written by calibrate_tags.py).
@@ -158,6 +166,14 @@ private:
     ts.transform.rotation = tf2::toMsg(T.getRotation());
   }
 
+  /// Returns true if the transform's stamp is within tf_max_age_s_ of now.
+  bool is_fresh(const geometry_msgs::msg::TransformStamped & ts)
+  {
+    rclcpp::Time stamp(ts.header.stamp, this->get_clock()->get_clock_type());
+    double age = (this->get_clock()->now() - stamp).seconds();
+    return age <= tf_max_age_s_;
+  }
+
   // --------------------------------------------------------------------------
   // Timer callback
   // --------------------------------------------------------------------------
@@ -172,7 +188,13 @@ private:
       ts0 = tf_buffer_->lookupTransform(
         camera_frame_id_, tag0_frame_id_,
         tf2::TimePoint(), std::chrono::milliseconds(50));
-      ok0 = true;
+      ok0 = is_fresh(ts0);
+      if (!ok0) {
+        RCLCPP_WARN(this->get_logger(),
+          "tag0 transform is stale (%.2f s old — tag likely disappeared)",
+          (this->get_clock()->now() -
+           rclcpp::Time(ts0.header.stamp, this->get_clock()->get_clock_type())).seconds());
+      }
     } catch (const tf2::TransformException & ex) {
       RCLCPP_WARN(this->get_logger(), "Could not get tag0 transform: %s", ex.what());
     }
@@ -181,7 +203,13 @@ private:
       ts1 = tf_buffer_->lookupTransform(
         camera_frame_id_, tag1_frame_id_,
         tf2::TimePoint(), std::chrono::milliseconds(50));
-      ok1 = true;
+      ok1 = is_fresh(ts1);
+      if (!ok1) {
+        RCLCPP_WARN(this->get_logger(),
+          "tag1 transform is stale (%.2f s old — tag likely disappeared)",
+          (this->get_clock()->now() -
+           rclcpp::Time(ts1.header.stamp, this->get_clock()->get_clock_type())).seconds());
+      }
     } catch (const tf2::TransformException & ex) {
       RCLCPP_WARN(this->get_logger(), "Could not get tag1 transform: %s", ex.what());
     }
@@ -351,6 +379,9 @@ private:
   // Inter-tag calibration
   bool tag_calib_enabled_{false};
   tf2::Transform calib_T_tag0_tag1_;  // Fixed transform: tag0 frame -> tag1 frame
+
+  // TF freshness threshold: transforms older than this are treated as "tag gone"
+  double tf_max_age_s_{1.0};
 };
 
 }  // namespace convoy_traj
