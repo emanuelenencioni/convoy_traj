@@ -21,6 +21,12 @@ def generate_launch_description():
         'config',
         'convoy_traj_params.yaml'
     )
+
+    tag_calibration_config = os.path.join(
+        get_package_share_directory('convoy_traj'),
+        'config',
+        'tag_calibration.yaml'
+    )
     
     # Get ZED launch file
     zed_wrapper_launch = IncludeLaunchDescription(
@@ -53,7 +59,7 @@ def generate_launch_description():
                 parameters=[apriltag_config],
                 remappings=[
                     ('image', '/zed/zed_node/left/color/raw/image'),
-                    ('camera_info', '/zed/zed_node/left/color/raw/image/camera_info'),
+                    ('camera_info', '/zed/zed_node/left/camera_info'),
                     ('detections', '/apriltag_node/detections'),
                 ],
                 extra_arguments=[{'use_intra_process_comms': True}],
@@ -65,6 +71,7 @@ def generate_launch_description():
                 name='convoy_traj_node',
                 parameters=[
                     convoy_traj_config,
+                    tag_calibration_config,
                 ],
                 extra_arguments=[{'use_intra_process_comms': True}],
             ),
