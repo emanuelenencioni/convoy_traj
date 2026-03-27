@@ -59,7 +59,7 @@ def generate_launch_description():
                 parameters=[apriltag_config],
                 remappings=[
                     ('image', '/zed/zed_node/left/color/raw/image'),
-                    ('camera_info', '/zed/zed_node/left/color/raw/image/camera_info'),
+                    ('camera_info', '/zed/zed_node/left/color/raw/camera_info'),
                     ('detections', '/apriltag_node/detections'),
                 ],
                 extra_arguments=[{'use_intra_process_comms': True}],
