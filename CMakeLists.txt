@@ -41,7 +41,9 @@ ament_target_dependencies(
   "tf2_ros"
 )
 
-# Register the component
+# Register the component and generate the convoy_traj_node executable from it.
+# rclcpp_components_register_node creates the executable target, so no separate
+# add_executable is needed (that would produce a duplicate-target CMake error).
 rclcpp_components_register_node(convoy_traj_component
   PLUGIN "convoy_traj::ConvoyTrajNode"
   EXECUTABLE convoy_traj_node
@@ -61,6 +63,13 @@ install(
 install(
   DIRECTORY config
   DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+  PROGRAMS
+    scripts/calibrate_tags.py
+    scripts/test_tag_fallback.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
