@@ -219,7 +219,6 @@ ros2 run convoy_traj test_tag_fallback.py --scenario cycle
 ```
 
 ---
-
 ## Troubleshooting
 
 ### "Lookup would require extrapolation into the future"
@@ -242,7 +241,12 @@ If the pose freezes instead of falling back, check that `tag_calib_enabled: true
 `config/tag_calibration.yaml` (run the calibration workflow above if not).
 
 ### No output published at all
-- Verify both tag TF frames are being published: `ros2 run tf2_tools view_frames`
-- Check `tf_max_age_ms` is large enough for your detector latency
-- If calibration is disabled and only one tag is visible, no output is published by
   design — enable calibration or ensure both tags are in view
+
+---
+
+## TODO
+
+- [ ] Check for `tag_pose` correctness (aligned with front vehicle)
+- [ ] Change frame `front_vehicle` to `front_tags`
+- [ ] `front_vehicle` should be the front posterior axes (`tag_pose` should be this)

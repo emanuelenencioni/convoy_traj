@@ -10,6 +10,6 @@ convoy_traj_node:
     
     # Front axes offset (translation from front_vehicle to front_axes)
     # Adjust these values based on your vehicle geometry
-    axes_offset_x: 1.5  # Forward offset in meters (positive = forward)
+    axes_offset_x: 1.0  # Forward offset in meters (positive = forward)
     axes_offset_y: 0.0  # Lateral offset in meters (positive = left)
-    axes_offset_z: 0.0  # Vertical offset in meters (positive = up)
+    axes_offset_z: 0.75  # Vertical offset in meters (positive = up)

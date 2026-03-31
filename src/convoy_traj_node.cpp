@@ -295,13 +295,13 @@ private:
     geometry_msgs::msg::PoseWithCovarianceStamped pose_to_publish;
     pose_to_publish.header.stamp = this->get_clock()->now();
     pose_to_publish.header.frame_id = camera_frame_id_;
-    pose_to_publish.pose.pose.position.x = filtered_transform_.transform.translation.x;
-    pose_to_publish.pose.pose.position.y = filtered_transform_.transform.translation.y;
-    pose_to_publish.pose.pose.position.z = filtered_transform_.transform.translation.z;
+    pose_to_publish.pose.pose.position.y = filtered_transform_.transform.translation.x;
+    pose_to_publish.pose.pose.position.z = filtered_transform_.transform.translation.y;
+    pose_to_publish.pose.pose.position.x = filtered_transform_.transform.translation.z;
 
     // 180° roll + 180° yaw: aligns AprilTag optical convention with vehicle forward axis.
     tf2::Quaternion q_rotation;
-    q_rotation.setRPY(M_PI, 0, M_PI);
+    q_rotation.setRPY(0, 0, M_PI);
     tf2::Quaternion q_filtered_rot;
     tf2::fromMsg(filtered_transform_.transform.rotation, q_filtered_rot);
     tf2::Quaternion q_corrected = q_filtered_rot * q_rotation;
